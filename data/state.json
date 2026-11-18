@@ -1,7 +1,7 @@
 {
   "version": 1,
   "initialized": true,
-  "last_sent_date": null,
+  "last_sent_date": "2026-11-18",
   "items": {
     "303c8817b278b2eb804fa63b5f9b47ea15301df841501992af344f4a87469c73": {
       "id": "303c8817b278b2eb804fa63b5f9b47ea15301df841501992af344f4a87469c73",
@@ -15,8 +15,9 @@
       "source": "IT之家",
       "published": "2026-11-18T11:58:50+00:00",
       "category": "汽车新技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "9f9e2c8c33cf75a512fbbbd53f3523a083e44329cd8bfd7f9c4ed0d5f8ddbccd": {
       "id": "9f9e2c8c33cf75a512fbbbd53f3523a083e44329cd8bfd7f9c4ed0d5f8ddbccd",
@@ -30,8 +31,9 @@
       "source": "IT之家",
       "published": "2026-11-18T11:36:09+00:00",
       "category": "汽车新技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "0f49c6bb9fa5466ddcbd88866cc7e392bcc087ba0f36c6476b46b78400f7c1fa": {
       "id": "0f49c6bb9fa5466ddcbd88866cc7e392bcc087ba0f36c6476b46b78400f7c1fa",
@@ -45,8 +47,9 @@
       "source": "IT之家",
       "published": "2026-11-18T11:22:21+00:00",
       "category": "汽车新技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "20095972294ff8acaa544beb7a1350e626254d2db96f81db75cc99b0436a0ec2": {
       "id": "20095972294ff8acaa544beb7a1350e626254d2db96f81db75cc99b0436a0ec2",
@@ -60,8 +63,9 @@
       "source": "IT之家",
       "published": "2026-11-18T09:43:02+00:00",
       "category": "底盘技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "8f1ecffa9310ebb0714a17abe72a05d315b11a46f3fb3b87e20d5f66d1964377": {
       "id": "8f1ecffa9310ebb0714a17abe72a05d315b11a46f3fb3b87e20d5f66d1964377",
@@ -75,8 +79,9 @@
       "source": "IT之家",
       "published": "2026-11-18T09:34:18+00:00",
       "category": "底盘技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "7b43078a5165f53d6b1ae7f954345df5a16c388cc95d750278afcfffe177a2b8": {
       "id": "7b43078a5165f53d6b1ae7f954345df5a16c388cc95d750278afcfffe177a2b8",
@@ -90,8 +95,9 @@
       "source": "IT之家",
       "published": "2026-11-18T09:22:31+00:00",
       "category": "底盘技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     },
     "b775a36fbfdc488aefcd6b88edf17e685f3c1a0066141bcac910f782107fe42c": {
       "id": "b775a36fbfdc488aefcd6b88edf17e685f3c1a0066141bcac910f782107fe42c",
@@ -105,8 +111,73 @@
       "source": "IT之家",
       "published": "2026-11-18T09:01:20+00:00",
       "category": "汽车新技术",
-      "status": "pending",
-      "seen_at": "2026-11-18T13:58:48.401435+00:00"
+      "status": "sent",
+      "seen_at": "2026-11-18T13:58:48.401435+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+    },
+    "584bd4b1bfb3a9261279c8280ec1e16141a2a738614226bbaed18283824bb50f": {
+      "id": "584bd4b1bfb3a9261279c8280ec1e16141a2a738614226bbaed18283824bb50f",
+      "keys": [
+        "584bd4b1bfb3a9261279c8280ec1e16141a2a738614226bbaed18283824bb50f",
+        "f95880d64b0a9632bcc856723d8d97cebfb2cb702b0a9764c7f2d239007e5c04"
+      ],
+      "title": "BMW bumps battery for the better: The 2027 i7 60 xDrive, driven",
+      "summary": "BMW has updated its flagship sedan with the newest EV and infotainment tech.",
+      "link": "https://arstechnica.com/cars/2026/11/bmw-bumps-battery-for-the-better-the-2027-i7-60-xdrive-driven/",
+      "source": "Ars Technica Cars",
+      "published": "2026-11-05T20:45:50+00:00",
+      "category": "汽车新技术",
+      "status": "sent",
+      "seen_at": "2026-11-18T14:33:32.027769+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+    },
+    "cde1f58fe449036f21ca4ed1a374a2ffcdb3cf35cb47f6dd936ddb27a01bbdb4": {
+      "id": "cde1f58fe449036f21ca4ed1a374a2ffcdb3cf35cb47f6dd936ddb27a01bbdb4",
+      "keys": [
+        "cde1f58fe449036f21ca4ed1a374a2ffcdb3cf35cb47f6dd936ddb27a01bbdb4",
+        "73965435a1734fc39cd13c832d76c2533cf06f217efbbb2fc8fed4c49e6712b3"
+      ],
+      "title": "Cadillac Escalade IQ review: Huge battery, huge range, huge SUV",
+      "summary": "With more than 200 kWh, this luxury three-row can go 460 miles on a charge.",
+      "link": "https://arstechnica.com/cars/2026/10/cadillac-escalade-iq-review-4-tons-of-electric-american-luxury-on-wheels/",
+      "source": "Ars Technica Cars",
+      "published": "2026-10-28T17:55:45+00:00",
+      "category": "汽车新技术",
+      "status": "sent",
+      "seen_at": "2026-11-18T14:33:32.027769+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+    },
+    "35331c03096b1cc9a70b3229fc246c75c6727d6f08da589db149b3033943e717": {
+      "id": "35331c03096b1cc9a70b3229fc246c75c6727d6f08da589db149b3033943e717",
+      "keys": [
+        "35331c03096b1cc9a70b3229fc246c75c6727d6f08da589db149b3033943e717",
+        "83999bb0ad06feeb7ee752afa4d6559d04b7521c0c7bb8ef763aaf9bb9c084c7"
+      ],
+      "title": "Ford simplifies using your EV as a home battery with the $30K Fathom",
+      "summary": "The Fathom pickup won’t need a wall-mounted inverter to output 10 kW to your house.",
+      "link": "https://arstechnica.com/cars/2026/10/ford-builds-bidrectional-charging-into-its-30k-electric-truck/",
+      "source": "Ars Technica Cars",
+      "published": "2026-10-27T16:17:58+00:00",
+      "category": "汽车新技术",
+      "status": "sent",
+      "seen_at": "2026-11-18T14:33:32.027769+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+    },
+    "abfb301192e3c88555db2ad6afd4bb12b284a3b3373563bedcf127dd3bee36e0": {
+      "id": "abfb301192e3c88555db2ad6afd4bb12b284a3b3373563bedcf127dd3bee36e0",
+      "keys": [
+        "abfb301192e3c88555db2ad6afd4bb12b284a3b3373563bedcf127dd3bee36e0",
+        "dd990ac8a8fa278153a4f3ac6acb27bd4dfa18c912dd2722c8d3ca74d41fdf87"
+      ],
+      "title": "Electric or gas? BMW goes both ways with new 2027 X5 and iX5.",
+      "summary": "460 kW charging and 450 miles of range are among the reasons the EV is the one to get.",
+      "link": "https://arstechnica.com/cars/2026/10/electric-or-gas-bmw-goes-both-ways-with-new-2027-x5-and-ix5/",
+      "source": "Ars Technica Cars",
+      "published": "2026-10-22T19:01:23+00:00",
+      "category": "汽车新技术",
+      "status": "sent",
+      "seen_at": "2026-11-18T14:33:32.027769+00:00",
+      "sent_at": "2026-11-18T14:33:32.027769+00:00"
     }
   }
 }
