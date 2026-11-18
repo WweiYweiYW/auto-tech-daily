@@ -1,7 +1,6 @@
 {
-  "version": 1,
+  "version": 2,
   "initialized": true,
-  "last_sent_date": "2026-11-18",
   "items": {
     "303c8817b278b2eb804fa63b5f9b47ea15301df841501992af344f4a87469c73": {
       "id": "303c8817b278b2eb804fa63b5f9b47ea15301df841501992af344f4a87469c73",
@@ -17,7 +16,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "9f9e2c8c33cf75a512fbbbd53f3523a083e44329cd8bfd7f9c4ed0d5f8ddbccd": {
       "id": "9f9e2c8c33cf75a512fbbbd53f3523a083e44329cd8bfd7f9c4ed0d5f8ddbccd",
@@ -33,7 +38,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "0f49c6bb9fa5466ddcbd88866cc7e392bcc087ba0f36c6476b46b78400f7c1fa": {
       "id": "0f49c6bb9fa5466ddcbd88866cc7e392bcc087ba0f36c6476b46b78400f7c1fa",
@@ -49,7 +60,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "20095972294ff8acaa544beb7a1350e626254d2db96f81db75cc99b0436a0ec2": {
       "id": "20095972294ff8acaa544beb7a1350e626254d2db96f81db75cc99b0436a0ec2",
@@ -65,7 +82,13 @@
       "category": "底盘技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "8f1ecffa9310ebb0714a17abe72a05d315b11a46f3fb3b87e20d5f66d1964377": {
       "id": "8f1ecffa9310ebb0714a17abe72a05d315b11a46f3fb3b87e20d5f66d1964377",
@@ -81,7 +104,13 @@
       "category": "底盘技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "7b43078a5165f53d6b1ae7f954345df5a16c388cc95d750278afcfffe177a2b8": {
       "id": "7b43078a5165f53d6b1ae7f954345df5a16c388cc95d750278afcfffe177a2b8",
@@ -97,7 +126,13 @@
       "category": "底盘技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "b775a36fbfdc488aefcd6b88edf17e685f3c1a0066141bcac910f782107fe42c": {
       "id": "b775a36fbfdc488aefcd6b88edf17e685f3c1a0066141bcac910f782107fe42c",
@@ -113,7 +148,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T13:58:48.401435+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "584bd4b1bfb3a9261279c8280ec1e16141a2a738614226bbaed18283824bb50f": {
       "id": "584bd4b1bfb3a9261279c8280ec1e16141a2a738614226bbaed18283824bb50f",
@@ -129,7 +170,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T14:33:32.027769+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "cde1f58fe449036f21ca4ed1a374a2ffcdb3cf35cb47f6dd936ddb27a01bbdb4": {
       "id": "cde1f58fe449036f21ca4ed1a374a2ffcdb3cf35cb47f6dd936ddb27a01bbdb4",
@@ -145,7 +192,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T14:33:32.027769+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "35331c03096b1cc9a70b3229fc246c75c6727d6f08da589db149b3033943e717": {
       "id": "35331c03096b1cc9a70b3229fc246c75c6727d6f08da589db149b3033943e717",
@@ -161,7 +214,13 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T14:33:32.027769+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     },
     "abfb301192e3c88555db2ad6afd4bb12b284a3b3373563bedcf127dd3bee36e0": {
       "id": "abfb301192e3c88555db2ad6afd4bb12b284a3b3373563bedcf127dd3bee36e0",
@@ -177,7 +236,17 @@
       "category": "汽车新技术",
       "status": "sent",
       "seen_at": "2026-11-18T14:33:32.027769+00:00",
-      "sent_at": "2026-11-18T14:33:32.027769+00:00"
+      "sent_at": {
+        "email": "2026-11-18T14:33:32.027769+00:00"
+      },
+      "delivery": {
+        "email": "sent",
+        "feishu": "sent"
+      }
     }
+  },
+  "last_sent_dates": {
+    "email": "2026-11-18",
+    "feishu": null
   }
 }
