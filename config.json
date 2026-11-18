@@ -1,0 +1,13 @@
+{
+  "feeds": [
+    {"name": "IT之家", "url": "https://www.ithome.com/rss/", "require_auto_context": true},
+    {"name": "Ars Technica Cars", "url": "https://arstechnica.com/cars/feed/", "require_auto_context": false}
+  ],
+  "auto_context": ["汽车", "车辆", "车载", "底盘", "悬架", "悬挂", "制动", "转向", "自动驾驶", "辅助驾驶", "电动汽车", "电动车", "新能源车", "智能驾驶", "整车", "轮胎", "car", "cars", "vehicle", "automotive"],
+  "chassis_keywords": ["底盘", "悬架", "悬挂", "线控制动", "线控转向", "制动", "转向", "减振", "减震", "空气弹簧", "扭矩矢量", "车身控制", "chassis", "suspension", "brake", "braking", "steer-by-wire", "steering", "torque vectoring", "damper"],
+  "technology_keywords": ["自动驾驶", "辅助驾驶", "智能驾驶", "激光雷达", "车载芯片", "车载系统", "动力电池", "固态电池", "电驱", "电机", "充电技术", "快充", "热管理", "800v", "碳化硅", "autonomous", "self-driving", "driver assistance", "lidar", "battery", "batteries", "electric motor", "powertrain", "charging", "thermal management", "silicon carbide"],
+  "exclude_keywords": ["优惠", "促销", "优惠券", "限时抢", "到手价", "立减", "折扣", "coupon", "discount", "promo code", "black friday"],
+  "retention_days": 90,
+  "max_pending": 500,
+  "first_run_hours": 48
+}

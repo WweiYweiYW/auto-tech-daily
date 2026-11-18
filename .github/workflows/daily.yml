@@ -1,0 +1,83 @@
+name: Auto tech daily
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+    - cron: '37 0 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'run 正常采集；preview 只读预览；send 强制发送 pending'
+        type: choice
+        default: run
+        options: [run, preview, send]
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+      - config.json
+      - '.github/workflows/**'
+permissions:
+  contents: read
+concurrency:
+  group: auto-tech-daily-state
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+  preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'preview'
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python daily.py --dry-run
+  collect:
+    if: github.event_name != 'push' && inputs.mode != 'preview'
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect and optionally send
+        env:
+          MODE: ${{ inputs.mode || 'run' }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        shell: bash
+        run: |
+          case "$MODE" in
+            send) python daily.py --force-send ;;
+            run) python daily.py ;;
+            *) echo 'Unknown mode'; exit 1 ;;
+          esac
+      - name: Persist changed state even after SMTP failure
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- data/state.json
+          if ! git diff --cached --quiet -- data/state.json; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'chore: update daily state' -- data/state.json
+            git push origin HEAD:main
+          fi
