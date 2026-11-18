@@ -1,10 +1,12 @@
 """Free RSS automotive digest. Python 3.12, standard library only."""
 import argparse
+import base64
 import copy
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 import hashlib
+import hmac
 import html
 from html.parser import HTMLParser
 import json
@@ -16,7 +18,7 @@ import ssl
 import sys
 import time
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
@@ -24,6 +26,9 @@ ROOT = Path(__file__).resolve().parent
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 UTC = timezone.utc
 MAX_FEED_BYTES = 5 * 1024 * 1024
+CHANNELS = ("email", "feishu")
+FEISHU_BATCH = 12
+FEISHU_MAX_BYTES = 20_000
 
 
 class TextParser(HTMLParser):
@@ -149,7 +154,30 @@ def fetch_feed(url):
 
 
 def new_state():
-    return {"version": 1, "initialized": False, "last_sent_date": None, "items": {}}
+    return {"version": 2, "initialized": False, "last_sent_dates": dict.fromkeys(CHANNELS), "items": {}}
+
+
+def migrate_state(state):
+    """Migrate in memory only; legacy sent articles never replay to new channels."""
+    if state.get("version", 1) == 1:
+        state["last_sent_dates"] = {"email": state.pop("last_sent_date", None), "feishu": None}
+        for item in state["items"].values():
+            status = item["status"]
+            if isinstance(item.get("sent_at"), str):
+                item["sent_at"] = {"email": item["sent_at"]}
+            item["delivery"] = {
+                "email": status,
+                "feishu": "sent" if status == "sent" else "skipped",
+            }
+        state["version"] = 2
+    if state["version"] != 2:
+        raise ValueError("unsupported state version")
+    return state
+
+
+def update_status(item):
+    statuses = item["delivery"].values()
+    item["status"] = "pending" if "pending" in statuses else "sent" if "sent" in statuses else "skipped"
 
 
 def load_state(path):
@@ -166,7 +194,8 @@ def save_state(path, state):
     temporary.replace(path)
 
 
-def collect(state, config, now, fetch=fetch_feed):
+def collect(state, config, now, fetch=fetch_feed, enabled=None):
+    enabled = enabled or dict.fromkeys(CHANNELS, False)
     cutoff = now - timedelta(days=config["retention_days"])
     state["items"] = {k: v for k, v in state["items"].items() if parse_date(v["seen_at"]) >= cutoff}
     known = {key for v in state["items"].values() for key in v["keys"]}
@@ -191,7 +220,10 @@ def collect(state, config, now, fetch=fetch_feed):
                 continue
             if published and (published < cutoff or published > now + timedelta(hours=24)):
                 continue
-            item.update(category=category, status="pending", seen_at=now.isoformat())
+            item.update(category=category, seen_at=now.isoformat(), delivery={
+                channel: "pending" if enabled[channel] else "skipped" for channel in CHANNELS
+            })
+            update_status(item)
             state["items"][item["id"]] = item
             known.update(item["keys"])
             added += 1
@@ -201,13 +233,14 @@ def collect(state, config, now, fetch=fetch_feed):
     # Keep dedup tombstones when bounding the pending queue.
     for item in pending[:-config["max_pending"]]:
         item["status"] = "discarded"
+        item["delivery"] = {c: "discarded" if s == "pending" else s for c, s in item["delivery"].items()}
         item["summary"] = ""
     return added, successes, errors
 
 
-def due(state, now):
+def due(state, now, channel="email"):
     local = now.astimezone(SHANGHAI)
-    return (local.hour, local.minute) >= (8, 37) and state.get("last_sent_date") != local.date().isoformat()
+    return (local.hour, local.minute) >= (12, 30) and state["last_sent_dates"].get(channel) != local.date().isoformat()
 
 
 def render(items, day):
@@ -241,11 +274,73 @@ def send_mail(items, day, env):
             raise RuntimeError("recipient refused")
 
 
-def run(config, state_path, now=None, dry_run=False, force_send=False, env=None, fetch=fetch_feed, sender=send_mail):
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("redirect rejected")
+
+
+def valid_feishu_url(value):
+    # Exact host, no ports/userinfo/query/fragment, and no normalization surprises.
+    return bool(re.fullmatch(r"https://open\.feishu\.cn/open-apis/bot/v2/hook/[A-Za-z0-9_-]+", value))
+
+
+def feishu_signature(timestamp, secret):
+    key = f"{timestamp}\n{secret}".encode("utf-8")
+    return base64.b64encode(hmac.new(key, b"", hashlib.sha256).digest()).decode("ascii")
+
+
+def feishu_payload(items, day, env, timestamp):
+    text = [f"汽车技术日报 {day}", "摘要为 RSS 原文摘录，未使用 AI。"]
+    for item in items:
+        link = item["link"]
+        if not valid_url(link) or len(link.encode("utf-8")) > 600:
+            link = "链接无效或超长，完整记录请查看仓库 data/state.json。"
+        text.append(f"\n【{item['category']}】{item['title'][:60]}\n{item['source'][:20]}\n{item['summary'][:80]}\n{link}")
+    text.append("\n每批最多 12 篇；标题/摘录可能截短，其余待下次日报或手动 send。")
+    payload = {"msg_type": "text", "content": {"text": "\n".join(text)}}
+    if env.get("FEISHU_SIGN_SECRET"):
+        payload.update(timestamp=str(timestamp), sign=feishu_signature(timestamp, env["FEISHU_SIGN_SECRET"]))
+    return json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+
+def feishu_batch(items, day, env):
+    batch = []
+    for item in items[:FEISHU_BATCH]:
+        candidate = batch + [item]
+        if len(feishu_payload(candidate, day, env, int(time.time()))) >= FEISHU_MAX_BYTES:
+            break
+        batch = candidate
+    if items and not batch:
+        raise ValueError("article cannot fit bounded payload")
+    return batch
+
+
+def send_feishu(items, day, env):
+    url = env["FEISHU_WEBHOOK"]
+    if not valid_feishu_url(url):
+        raise ValueError("invalid Feishu webhook")
+    payload = feishu_payload(items, day, env, int(time.time()))
+    if len(items) > FEISHU_BATCH or len(payload) >= FEISHU_MAX_BYTES:
+        raise ValueError("Feishu payload too large")
+    request = Request(url, data=payload, headers={"Content-Type": "application/json; charset=utf-8", "User-Agent": "AutoTechDaily/1.0"}, method="POST")
+    # Never retry an ambiguous delivery automatically; pending is retained for a later run.
+    with build_opener(NoRedirect()).open(request, timeout=20) as response:
+        if response.status != 200:
+            raise RuntimeError("Feishu HTTP failure")
+        raw = response.read(65537)
+    if len(raw) > 65536:
+        raise ValueError("Feishu response too large")
+    result = json.loads(raw)
+    if not isinstance(result, dict) or type(result.get("code")) is not int or result["code"] != 0:
+        raise RuntimeError("Feishu business failure")
+
+
+def run(config, state_path, now=None, dry_run=False, force_send=False, env=None, fetch=fetch_feed, sender=send_mail, feishu_sender=send_feishu):
     now = now or datetime.now(UTC)
     env = os.environ if env is None else env
-    state = copy.deepcopy(load_state(state_path))
-    added, successes, errors = collect(state, config, now, fetch)
+    state = migrate_state(copy.deepcopy(load_state(state_path)))
+    enabled = {"email": bool(env.get("SMTP_USERNAME") and env.get("SMTP_PASSWORD")), "feishu": bool(env.get("FEISHU_WEBHOOK"))}
+    added, successes, errors = collect(state, config, now, fetch, enabled)
     pending = sorted((v for v in state["items"].values() if v["status"] == "pending"), key=lambda v: (v["category"], v["seen_at"], v["id"]))
     day = now.astimezone(SHANGHAI).date().isoformat()
     messages = [f"采集新增 {added}；成功源 {successes}/{len(config['feeds'])}；待发 {len(pending)}"]
@@ -255,24 +350,34 @@ def run(config, state_path, now=None, dry_run=False, force_send=False, env=None,
         messages.append("全部 RSS 源失败，本次不发送，请检查网络或源地址。")
     if dry_run:
         messages.append("预览：不发送、不修改状态。")
-        messages.append(render(pending, day)[0])
+        preview = sorted((v for v in state["items"].values() if v["status"] == "pending" or v["seen_at"] == now.isoformat()), key=lambda v: v["id"])
+        messages.append(render(preview, day)[0])
     else:
         try:
-            if not env.get("SMTP_USERNAME") or not env.get("SMTP_PASSWORD"):
-                messages.append("邮件凭据未配置：仅采集，未发送。")
-            elif not pending:
-                messages.append("无内容，未发送。")
-            elif successes and (force_send or due(state, now)):
-                sender(pending, day, env)
-                for item in pending:
-                    item.update(status="sent", sent_at=now.isoformat())
-                state["last_sent_date"] = day
-                messages.append(f"已发 {len(pending)} 篇。")
-            else:
-                messages.append("已采集；未到发送时间或今日已发。")
-        except Exception as exc:
-            messages.append(f"邮件发送失败（{type(exc).__name__}）；保留 pending。")
-            code = 1
+            for channel, send, label in (("email", sender, "邮件"), ("feishu", feishu_sender, "飞书")):
+                if not enabled[channel]:
+                    partial = (channel == "email" and any(env.get(k) for k in ("SMTP_USERNAME", "SMTP_PASSWORD", "MAIL_TO"))) or (channel == "feishu" and env.get("FEISHU_SIGN_SECRET"))
+                    messages.append(f"{label}凭据{'配置不完整（缺少必需项）' if partial else '未配置'}：本渠道未发送。")
+                    continue
+                queue = [item for item in pending if item["delivery"][channel] == "pending"]
+                if not queue:
+                    messages.append(f"{label}无内容，未发送。")
+                    continue
+                if not successes or not (force_send or due(state, now, channel)):
+                    messages.append(f"{label}已采集；未到发送时间或今日已发。")
+                    continue
+                try:
+                    batch = feishu_batch(queue, day, env) if channel == "feishu" else queue
+                    send(batch, day, env)
+                    for item in batch:
+                        item["delivery"][channel] = "sent"
+                        item.setdefault("sent_at", {})[channel] = now.isoformat()
+                        update_status(item)
+                    state["last_sent_dates"][channel] = day
+                    messages.append(f"{label}已发 {len(batch)} 篇；本渠道剩余待发 {len(queue) - len(batch)} 篇。")
+                except Exception as exc:
+                    messages.append(f"{label}发送失败（{type(exc).__name__}）；保留本渠道 pending。")
+                    code = 1
         finally:
             save_state(state_path, state)
     return code, messages
@@ -280,8 +385,8 @@ def run(config, state_path, now=None, dry_run=False, force_send=False, env=None,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dry-run", action="store_true", help="只读状态并输出文章预览，绝不发信")
-    parser.add_argument("--force-send", action="store_true", help="有凭据时强制发送 pending，绕过时间和当日限制")
+    parser.add_argument("--dry-run", action="store_true", help="只读状态并输出文章预览，不向任何渠道投递")
+    parser.add_argument("--force-send", action="store_true", help="各已配置渠道强制发送其 pending，绕过时间和当日限制")
     args = parser.parse_args()
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     try:
@@ -291,7 +396,7 @@ def main():
         if os.environ.get("GITHUB_STEP_SUMMARY"):
             # Only operational summary is written; never include article-controlled markup.
             with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-                summary.write("\n".join(messages[:1] + [m for m in messages[1:] if m.startswith(("预览：", "邮件凭据", "已发 ", "无内容", "已采集", "邮件发送失败", "全部 RSS"))]) + "\n")
+                summary.write("\n".join(messages[:1] + [m for m in messages[1:] if m.startswith(("预览：", "邮件", "飞书", "全部 RSS"))]) + "\n")
         return code
     except Exception as exc:
         print(f"运行失败（{type(exc).__name__}），请检查配置和状态文件。", file=sys.stderr)

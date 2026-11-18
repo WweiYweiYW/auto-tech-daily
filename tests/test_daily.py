@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import daily
 
-NOW = datetime(2026, 11, 18, 1, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 18, 5, 0, tzinfo=timezone.utc)
 CONFIG = json.loads((daily.ROOT / 'config.json').read_text(encoding='utf-8'))
 
 
@@ -24,10 +24,11 @@ class DailyTests(unittest.TestCase):
         self.config = copy.deepcopy(CONFIG)
         self.config['feeds'] = [CONFIG['feeds'][0]]
         self.sender = MagicMock()
+        self.feishu_sender = MagicMock()
         self.env = {'SMTP_USERNAME': 'private@example.com', 'SMTP_PASSWORD': 'never-print'}
 
     def run_daily(self, **kwargs):
-        options = dict(config=self.config, state_path=self.path, now=NOW, env={}, fetch=lambda _: rss(), sender=self.sender)
+        options = dict(config=self.config, state_path=self.path, now=NOW, env={}, fetch=lambda _: rss(), sender=self.sender, feishu_sender=self.feishu_sender)
         options.update(kwargs)
         return daily.run(**options)
 
@@ -77,19 +78,19 @@ class DailyTests(unittest.TestCase):
 
     def test_timezone_and_catchup(self):
         state = daily.new_state()
-        self.assertFalse(daily.due(state, NOW.replace(hour=0, minute=36)))
-        self.assertTrue(daily.due(state, NOW.replace(hour=0, minute=37)))
+        self.assertFalse(daily.due(state, NOW.replace(hour=4, minute=29)))
+        self.assertTrue(daily.due(state, NOW.replace(hour=4, minute=30)))
         self.assertTrue(daily.due(state, NOW.replace(hour=12)))
-        state['last_sent_date'] = '2026-11-18'
+        state['last_sent_dates']['email'] = '2026-11-18'
         self.assertFalse(daily.due(state, NOW))
         self.assertTrue(daily.due(state, NOW + timedelta(days=1)))
-        self.assertEqual(daily.parse_date('2026-11-18T08:37:00+08:00'), NOW.replace(hour=0, minute=37))
-        self.assertFalse(daily.due(state, NOW.replace(hour=17)))  # Next Shanghai date, before 08:37.
+        self.assertEqual(daily.parse_date('2026-11-18T12:30:00+08:00'), NOW.replace(hour=4, minute=30))
+        self.assertFalse(daily.due(state, NOW.replace(hour=17)))  # Next Shanghai date, before 12:30.
 
     def test_success_and_same_day_no_resend(self):
         code, messages = self.run_daily(env=self.env)
         self.assertEqual(code, 0)
-        self.assertIn('已发 1 篇。', messages)
+        self.assertTrue(any('邮件已发 1 篇' in line for line in messages))
         self.assertEqual(next(iter(daily.load_state(self.path)['items'].values()))['status'], 'sent')
         self.run_daily(env=self.env, fetch=lambda _: rss(guid='two', link='https://example.com/two'))
         self.assertEqual(self.sender.call_count, 1)
@@ -99,7 +100,7 @@ class DailyTests(unittest.TestCase):
         code, messages = self.run_daily(env=self.env)
         self.assertEqual(code, 1)
         self.assertNotIn('private@example.com', '\n'.join(messages))
-        self.assertIsNone(daily.load_state(self.path)['last_sent_date'])
+        self.assertIsNone(daily.load_state(self.path)['last_sent_dates']['email'])
         self.assertEqual(next(iter(daily.load_state(self.path)['items'].values()))['status'], 'pending')
         self.sender.side_effect = None
         self.run_daily(env=self.env)
@@ -111,7 +112,9 @@ class DailyTests(unittest.TestCase):
         code, messages = self.run_daily()
         self.assertEqual(code, 0)
         self.assertTrue(any('未配置' in line for line in messages))
-        self.run_daily(env=self.env, now=NOW.replace(hour=0, minute=0), force_send=True)
+        # Articles collected while a channel is disabled are deliberately skipped.
+        self.run_daily(env=self.env, now=NOW.replace(hour=0, minute=0), force_send=True,
+                       fetch=lambda _: rss(guid='two', link='https://example.com/two'))
         self.sender.assert_called_once()
 
     def test_dry_run_no_mutation_no_send(self):
@@ -126,9 +129,9 @@ class DailyTests(unittest.TestCase):
         self.assertNotIn('private@example.com', '\n'.join(messages))
 
     def test_retention_pending_limit_and_html_escape(self):
-        self.run_daily()
+        self.run_daily(env=self.env, now=NOW.replace(hour=0))
         self.config['max_pending'] = 1
-        self.run_daily(fetch=lambda _: rss(guid='two', link='https://example.com/two'))
+        self.run_daily(env=self.env, now=NOW.replace(hour=0), fetch=lambda _: rss(guid='two', link='https://example.com/two'))
         items = list(daily.load_state(self.path)['items'].values())
         self.assertEqual(sum(i['status'] == 'pending' for i in items), 1)
         self.assertEqual(sum(i['status'] == 'discarded' for i in items), 1)

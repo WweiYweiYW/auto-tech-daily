@@ -2,7 +2,7 @@ name: Auto tech daily
 on:
   schedule:
     - cron: '17 */2 * * *'
-    - cron: '37 0 * * *'
+    - cron: '30 4 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -64,6 +64,8 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          FEISHU_SIGN_SECRET: ${{ secrets.FEISHU_SIGN_SECRET }}
         shell: bash
         run: |
           case "$MODE" in
@@ -71,7 +73,7 @@ jobs:
             run) python daily.py ;;
             *) echo 'Unknown mode'; exit 1 ;;
           esac
-      - name: Persist changed state even after SMTP failure
+      - name: Persist changed state even after delivery failure
         if: always()
         shell: bash
         run: |
