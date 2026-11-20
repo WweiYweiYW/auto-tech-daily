@@ -2,7 +2,7 @@ name: Auto tech daily
 on:
   schedule:
     - cron: '17 */2 * * *'
-    - cron: '30 4 * * *'
+    - cron: '47 4-6 * * *'
   workflow_dispatch:
     inputs:
       mode:
