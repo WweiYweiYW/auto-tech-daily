@@ -243,19 +243,73 @@ def due(state, now, channel="email"):
     return (local.hour, local.minute) >= (12, 30) and state["last_sent_dates"].get(channel) != local.date().isoformat()
 
 
+def email_excerpt(value, limit=160):
+    """Keep email excerpts short, preferring a complete sentence near the limit."""
+    value = " ".join(value.split())
+    if len(value) <= limit:
+        return value
+    prefix = value[:limit - 1]
+    endings = list(re.finditer(r'[。！？!?](?:[”’」』])?|\.(?=\s)', prefix))
+    if endings and endings[-1].end() >= limit // 2:
+        return prefix[:endings[-1].end()] + "…"
+    return prefix.rstrip() + "…"
+
+
 def render(items, day):
-    text = [f"汽车技术日报 {day}", "摘要为 RSS 原文摘录，未使用 AI。"]
-    markup = [f"<h1>汽车技术日报 {html.escape(day)}</h1><p>摘要为 RSS 原文摘录，未使用 AI。</p>"]
-    for category in ("底盘技术", "汽车新技术"):
-        group = [item for item in items if item["category"] == category and valid_url(item["link"])]
+    groups = [(category, [item for item in items if item["category"] == category and valid_url(item["link"])])
+              for category in ("底盘技术", "汽车新技术")]
+    count = sum(len(group) for _, group in groups)
+    text = [f"汽车技术日报｜{day}", f"本期 {count} 篇", ""]
+    font = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+    markup = [
+        '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f'<title>汽车技术日报 {html.escape(day)}</title></head>',
+        f'<body style="margin:0;padding:0;background-color:#f3f4f1;color:#24343b;font-family:{font};">',
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f1" style="width:100%;border-collapse:collapse;">',
+        '<tr><td align="center" style="padding:20px 8px;">',
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fffefa" style="width:100%;max-width:640px;table-layout:fixed;border-collapse:collapse;background-color:#fffefa;">',
+        '<tr><td style="padding:28px 22px 24px;border-top:4px solid #23675e;border-bottom:1px solid #dce3de;">',
+        f'<p style="margin:0 0 12px;color:#48615b;font-size:14px;line-height:24px;">{html.escape(day)} &nbsp; / &nbsp; 本期 {count} 篇</p>',
+        '<h1 style="margin:0;color:#173c36;font-family:\'Songti SC\', SimSun, serif;font-size:28px;line-height:40px;font-weight:700;">汽车技术日报</h1>',
+        '<p style="margin:8px 0 0;color:#5d6967;font-size:14px;line-height:24px;">底盘技术 · 汽车新技术</p></td></tr>',
+    ]
+    number = 0
+    for category, group in groups:
         if not group:
             continue
-        text.append("\n" + category)
-        markup.append(f"<h2>{category}</h2>")
+        text.append(f"【{category} · {len(group)} 篇】\n")
+        markup.append(
+            '<tr><td style="padding:26px 22px 4px;">'
+            f'<h2 style="margin:0;color:#23675e;font-size:17px;line-height:28px;font-weight:700;">{category}'
+            f' <span style="color:#68756e;font-size:13px;font-weight:400;"> / {len(group)} 篇</span></h2></td></tr>'
+        )
         for item in group:
-            excerpt = item["summary"][:600]
-            text.append(f"{item['title']}（{item['source']}）\n{excerpt}\n{item['link']}")
-            markup.append(f'<h3><a href="{html.escape(item["link"], quote=True)}">{html.escape(item["title"])}</a></h3><p>{html.escape(item["source"])}</p><p>{html.escape(excerpt)}</p>')
+            number += 1
+            excerpt = email_excerpt(item["summary"])
+            link = html.escape(item["link"], quote=True)
+            text.append(f"{number:02d}. {item['title']}\n来源：{item['source']}\n\n"
+                        + (f"{excerpt}\n\n" if excerpt else "")
+                        + f"阅读全文：{item['link']}\n")
+            markup.extend([
+                '<tr><td style="padding:20px 22px 22px;border-bottom:1px solid #e4e8e2;word-wrap:break-word;overflow-wrap:anywhere;">',
+                f'<p style="margin:0 0 8px;color:#64716b;font-size:13px;line-height:22px;">{number:02d} &nbsp; 来源：{html.escape(item["source"])}</p>',
+                f'<h3 style="margin:0 0 12px;font-size:21px;line-height:32px;font-weight:700;"><a href="{link}" style="display:block;color:#203c36;text-decoration:none;word-break:break-word;">{html.escape(item["title"])}</a></h3>',
+            ])
+            if excerpt:
+                markup.append(f'<p style="margin:0 0 14px;color:#45544f;font-size:16px;line-height:29px;word-break:break-word;">{html.escape(excerpt)}</p>')
+            markup.append(
+                f'<a href="{link}" style="display:inline-block;padding:10px 16px;border:1px solid #b9cec5;background-color:#edf3ee;color:#205d51;font-size:15px;line-height:24px;font-weight:700;text-decoration:underline;">阅读全文 &rarr;</a></td></tr>'
+            )
+    if not count:
+        text.append("本期暂无文章。\n")
+        markup.append('<tr><td style="padding:28px 22px;font-size:16px;line-height:28px;">本期暂无文章。</td></tr>')
+    text.append("摘要为 RSS 原文摘录，未使用 AI；长摘要已节选，完整内容请见原文。")
+    markup.extend([
+        '<tr><td style="padding:22px;color:#64716b;font-size:13px;line-height:23px;">',
+        '<p style="margin:0;">摘要为 RSS 原文摘录，未使用 AI。<br>长摘要已节选，完整内容请见原文。</p>',
+        '</td></tr></table></td></tr></table></body></html>',
+    ])
     return "\n".join(text), "\n".join(markup)
 
 

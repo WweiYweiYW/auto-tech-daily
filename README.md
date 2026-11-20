@@ -2,6 +2,8 @@
 
 独立 Python 3.12 项目：免费 RSS、关键词筛选、原文摘录、QQ 邮件和飞书群机器人。没有付费 AI、没有 NAS、没有外部发信 Action。运行于公开 GitHub 仓库的 `ubuntu-latest` 标准 runner，应用只使用 Python 标准库，Linux 自带 IANA 时区数据库。
 
+邮件排版可直接打开 [静态预览](preview/email.html) 查看，收窄窗口可查看手机单列效果。预览使用虚构示例文章，链接指向公开技术资料，不读取状态、不联网采集、不发送邮件；实际邮件客户端的显示可能略有差异。
+
 ## 发布与运行
 
 仓库为 `WweiYweiYW/auto-tech-daily`，项目文件放在仓库根目录，默认分支为 `main`。本次双渠道改造仅在本地实现和 mock 验证，发布由仓库所有者负责。
