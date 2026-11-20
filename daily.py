@@ -22,6 +22,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
+import web_digest
+
 ROOT = Path(__file__).resolve().parent
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 UTC = timezone.utc
@@ -313,12 +315,29 @@ def render(items, day):
     return "\n".join(text), "\n".join(markup)
 
 
+def web_reminder(items, day, env):
+    url = env["WEB_BASE_URL"]
+    if not web_digest.valid_entry_url(url):
+        raise ValueError("invalid WEB_BASE_URL")
+    counts = {category: sum(item["category"] == category for item in items)
+              for category in ("底盘技术", "汽车新技术")}
+    return (f"汽车技术日报 {day}\n本期 {len(items)} 篇\n"
+            f"底盘技术 {counts['底盘技术']} 篇 · 汽车新技术 {counts['汽车新技术']} 篇\n"
+            f"打开手机日报：{url}")
+
+
 def send_mail(items, day, env):
     message = EmailMessage()
     message["Subject"] = f"汽车技术日报 {day}"
     message["From"] = env["SMTP_USERNAME"]
     message["To"] = env.get("MAIL_TO") or env["SMTP_USERNAME"]
-    text, markup = render(items, day)
+    if env.get("WEB_BASE_URL"):
+        text = web_reminder(items, day, env)
+        markup = ("<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\">"
+                  + "".join(f"<p>{html.escape(line)}</p>" for line in text.splitlines()[:-1])
+                  + f'<p><a href="{html.escape(env["WEB_BASE_URL"], quote=True)}">打开手机日报</a></p></html>')
+    else:
+        text, markup = render(items, day)
     message.set_content(text)
     message.add_alternative(markup, subtype="html")
     with smtplib.SMTP_SSL("smtp.qq.com", 465, timeout=30, context=ssl.create_default_context()) as smtp:
@@ -344,6 +363,11 @@ def feishu_signature(timestamp, secret):
 
 
 def feishu_payload(items, day, env, timestamp):
+    if env.get("WEB_BASE_URL"):
+        payload = {"msg_type": "text", "content": {"text": web_reminder(items, day, env)}}
+        if env.get("FEISHU_SIGN_SECRET"):
+            payload.update(timestamp=str(timestamp), sign=feishu_signature(timestamp, env["FEISHU_SIGN_SECRET"]))
+        return json.dumps(payload, ensure_ascii=False).encode("utf-8")
     text = [f"汽车技术日报 {day}", "摘要为 RSS 原文摘录，未使用 AI。"]
     for item in items:
         link = item["link"]
@@ -374,7 +398,7 @@ def send_feishu(items, day, env):
     if not valid_feishu_url(url):
         raise ValueError("invalid Feishu webhook")
     payload = feishu_payload(items, day, env, int(time.time()))
-    if len(items) > FEISHU_BATCH or len(payload) >= FEISHU_MAX_BYTES:
+    if (not env.get("WEB_BASE_URL") and len(items) > FEISHU_BATCH) or len(payload) >= FEISHU_MAX_BYTES:
         raise ValueError("Feishu payload too large")
     request = Request(url, data=payload, headers={"Content-Type": "application/json; charset=utf-8", "User-Agent": "AutoTechDaily/1.0"}, method="POST")
     # Never retry an ambiguous delivery automatically; pending is retained for a later run.
@@ -392,8 +416,18 @@ def send_feishu(items, day, env):
 def run(config, state_path, now=None, dry_run=False, force_send=False, env=None, fetch=fetch_feed, sender=send_mail, feishu_sender=send_feishu):
     now = now or datetime.now(UTC)
     env = os.environ if env is None else env
-    state = migrate_state(copy.deepcopy(load_state(state_path)))
+    output_dir = env.get("WEB_OUTPUT_DIR")
+    base_url = env.get("WEB_BASE_URL")
+    reminder_channel = env.get("WEB_REMINDER_CHANNEL") or "email"
+    if ((base_url and (not output_dir or not web_digest.valid_entry_url(base_url)))
+            or reminder_channel not in CHANNELS):
+        return 1, ["网页配置错误：WEB_BASE_URL 仅支持 HTTP(S) 根入口或 /index.html，无查询/片段/用户信息，并需 WEB_OUTPUT_DIR；提醒渠道仅支持 email/feishu。"]
     enabled = {"email": bool(env.get("SMTP_USERNAME") and env.get("SMTP_PASSWORD")), "feishu": bool(env.get("FEISHU_WEBHOOK"))}
+    if base_url and not enabled[reminder_channel]:
+        return 1, ["网页提醒配置错误：所选渠道凭据不完整；未采集、未写状态或网页。"]
+    state = migrate_state(copy.deepcopy(load_state(state_path)))
+    if base_url:
+        enabled = {channel: available and channel == reminder_channel for channel, available in enabled.items()}
     added, successes, errors = collect(state, config, now, fetch, enabled)
     pending = sorted((v for v in state["items"].values() if v["status"] == "pending"), key=lambda v: (v["category"], v["seen_at"], v["id"]))
     day = now.astimezone(SHANGHAI).date().isoformat()
@@ -408,12 +442,31 @@ def run(config, state_path, now=None, dry_run=False, force_send=False, env=None,
         messages.append(render(preview, day)[0])
     else:
         try:
+            eligible_ids = None
+            if output_dir and not successes:
+                messages.append("网页未更新：全部 RSS 源失败，保留原页及更新时间。")
+            if output_dir and successes:
+                try:
+                    payload = web_digest.export_payload(state, now)
+                    web_digest.publish(state, now, output_dir, payload=payload)
+                    eligible_ids = {article["id"] for article in payload["articles"]}
+                    messages.append("网页已更新。")
+                except Exception as exc:
+                    messages.append(f"网页发布失败（{type(exc).__name__}）；本次不发送，保留待发。")
+                    return 1, messages
             for channel, send, label in (("email", sender, "邮件"), ("feishu", feishu_sender, "飞书")):
+                if base_url and channel != reminder_channel:
+                    continue
                 if not enabled[channel]:
                     partial = (channel == "email" and any(env.get(k) for k in ("SMTP_USERNAME", "SMTP_PASSWORD", "MAIL_TO"))) or (channel == "feishu" and env.get("FEISHU_SIGN_SECRET"))
                     messages.append(f"{label}凭据{'配置不完整（缺少必需项）' if partial else '未配置'}：本渠道未发送。")
                     continue
                 queue = [item for item in pending if item["delivery"][channel] == "pending"]
+                if base_url and eligible_ids is not None:
+                    visible = [item for item in queue if item["id"] in eligible_ids]
+                    if len(visible) != len(queue):
+                        messages.append(f"{label}有 {len(queue) - len(visible)} 篇未在网页展示，保留 pending，不计入提醒。")
+                    queue = visible
                 if not queue:
                     messages.append(f"{label}无内容，未发送。")
                     continue
@@ -421,7 +474,7 @@ def run(config, state_path, now=None, dry_run=False, force_send=False, env=None,
                     messages.append(f"{label}已采集；未到发送时间或今日已发。")
                     continue
                 try:
-                    batch = feishu_batch(queue, day, env) if channel == "feishu" else queue
+                    batch = feishu_batch(queue, day, env) if channel == "feishu" and not base_url else queue
                     send(batch, day, env)
                     for item in batch:
                         item["delivery"][channel] = "sent"
@@ -444,7 +497,8 @@ def main():
     args = parser.parse_args()
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     try:
-        code, messages = run(config, ROOT / "data/state.json", dry_run=args.dry_run, force_send=args.force_send)
+        state_path = Path(os.environ.get("DAILY_STATE_PATH") or ROOT / "data/state.json")
+        code, messages = run(config, state_path, dry_run=args.dry_run, force_send=args.force_send)
         output = "\n".join(messages)
         print(output)
         if os.environ.get("GITHUB_STEP_SUMMARY"):

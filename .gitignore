@@ -10,3 +10,4 @@ preview*.html
 preview*.txt
 .pytest_cache/
 *.tmp
+site/
