@@ -1,11 +1,11 @@
 [Unit]
-Description=Collect every two hours and refresh digest at midday
+Description=Collect every two hours and send digest at 18:00 Shanghai time
 
 [Timer]
 OnCalendar=*-*-* 00/2:17:00 Asia/Shanghai
-OnCalendar=*-*-* 12:30:00 Asia/Shanghai
-OnCalendar=*-*-* 12:37:00 Asia/Shanghai
-OnCalendar=*-*-* 12:47:00 Asia/Shanghai
+OnCalendar=*-*-* 18:00:00 Asia/Shanghai
+OnCalendar=*-*-* 18:07:00 Asia/Shanghai
+OnCalendar=*-*-* 18:17:00 Asia/Shanghai
 Persistent=true
 AccuracySec=1s
 RandomizedDelaySec=0

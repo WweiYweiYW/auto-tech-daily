@@ -97,7 +97,7 @@ class ProductionConfigTests(unittest.TestCase):
         self.site.mkdir()
         (self.site / 'index.html').write_text('<p>ready</p>', encoding='utf-8')
         daily.save_state(self.path, daily.new_state())
-        self.env = {'DAILY_STATE_PATH':str(self.path), 'WEB_OUTPUT_DIR':str(self.site),
+        self.env = {'DAILY_STATE_PATH':str(self.path), 'WEB_OUTPUT_DIR':str(self.site), 'SEND_TIME':'18:00',
                     'WEB_BASE_URL':'https://example.com/',
                     'SMTP_USERNAME':'test@example.com', 'SMTP_PASSWORD':'secret'}
         for name, value in [('STATE_PATH', self.path), ('SITE_PATH', self.site)]:
@@ -118,6 +118,16 @@ class ProductionConfigTests(unittest.TestCase):
         self.assertFalse(valid_environment(env | {'DAILY_STATE_PATH':'data/state.json'}))
         self.assertFalse(valid_environment(env | {'WEB_REMINDER_CHANNEL':'feishu'}))
         self.assertTrue(valid_environment(env | {'WEB_REMINDER_CHANNEL':'feishu', 'FEISHU_WEBHOOK':WEBHOOK}))
+
+    def test_production_requires_explicit_18_hour_send_time(self):
+        for value in (None, '', '12:30', '18:0', '24:00'):
+            env = self.env.copy()
+            if value is None:
+                env.pop('SEND_TIME')
+            else:
+                env['SEND_TIME'] = value
+            self.assertFalse(valid_environment(env))
+        self.assertTrue(valid_environment(self.env))
 
     def test_missing_or_invalid_state_never_bootstraps(self):
         self.path.unlink()
@@ -201,6 +211,39 @@ class WebRunTests(unittest.TestCase):
         self.assertEqual(len(self.renderer.call_args.args[0]['articles']), 2)
         self.run_daily(now=NOW + timedelta(days=1))
         self.assertEqual(self.email.call_count, 2)
+
+    def test_server_send_time_boundary_and_daily_dedup(self):
+        self.env['SEND_TIME'] = '18:00'
+        before = NOW.replace(hour=9, minute=59)  # 17:59 Shanghai
+        self.assertEqual(self.run_daily(now=before)[0], 0)
+        self.email.assert_not_called()
+        self.assertTrue((self.site/'index.html').exists())
+        self.assertEqual(self.run_daily(now=before + timedelta(minutes=1))[0], 0)
+        self.email.assert_called_once()
+        self.run_daily(now=before + timedelta(minutes=8))
+        self.email.assert_called_once()
+
+    def test_default_time_still_1230_without_environment_override(self):
+        before = NOW.replace(hour=4, minute=29)
+        self.run_daily(now=before)
+        self.email.assert_not_called()
+        self.run_daily(now=before + timedelta(minutes=1))
+        self.email.assert_called_once()
+
+    def test_invalid_send_time_has_no_collection_or_write_side_effects(self):
+        for value in ('', '18:0', '6:00', '24:00', '18:60', '18:00\n', ' 18:00', '１８:００'):
+            with self.subTest(value=value):
+                fetch = MagicMock()
+                self.assertEqual(self.run_daily(env=self.env | {'SEND_TIME':value}, fetch=fetch)[0], 1)
+                fetch.assert_not_called()
+                self.assertFalse(self.path.exists())
+                self.assertFalse(self.site.exists())
+        self.email.assert_not_called()
+        self.renderer.assert_not_called()
+
+    def test_force_send_still_bypasses_server_time(self):
+        self.run_daily(env=self.env | {'SEND_TIME':'18:00'}, force_send=True)
+        self.email.assert_called_once()
 
     def test_feishu_one_reminder_covers_full_queue(self):
         self.env['WEB_REMINDER_CHANNEL'] = 'feishu'

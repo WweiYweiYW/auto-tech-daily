@@ -240,9 +240,15 @@ def collect(state, config, now, fetch=fetch_feed, enabled=None):
     return added, successes, errors
 
 
-def due(state, now, channel="email"):
+def due(state, now, channel="email", send_time=(12, 30)):
     local = now.astimezone(SHANGHAI)
-    return (local.hour, local.minute) >= (12, 30) and state["last_sent_dates"].get(channel) != local.date().isoformat()
+    return (local.hour, local.minute) >= send_time and state["last_sent_dates"].get(channel) != local.date().isoformat()
+
+
+def parse_send_time(value):
+    if not isinstance(value, str) or not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", value):
+        raise ValueError("SEND_TIME must be HH:MM")
+    return tuple(map(int, value.split(":")))
 
 
 def email_excerpt(value, limit=160):
@@ -416,6 +422,10 @@ def send_feishu(items, day, env):
 def run(config, state_path, now=None, dry_run=False, force_send=False, env=None, fetch=fetch_feed, sender=send_mail, feishu_sender=send_feishu):
     now = now or datetime.now(UTC)
     env = os.environ if env is None else env
+    try:
+        send_time = parse_send_time(env.get("SEND_TIME", "12:30"))
+    except ValueError:
+        return 1, ["配置错误：SEND_TIME 必须为有效的 HH:MM（00:00–23:59）；未采集、未写状态或网页。"]
     output_dir = env.get("WEB_OUTPUT_DIR")
     base_url = env.get("WEB_BASE_URL")
     reminder_channel = env.get("WEB_REMINDER_CHANNEL") or "email"
@@ -470,7 +480,7 @@ def run(config, state_path, now=None, dry_run=False, force_send=False, env=None,
                 if not queue:
                     messages.append(f"{label}无内容，未发送。")
                     continue
-                if not successes or not (force_send or due(state, now, channel)):
+                if not successes or not (force_send or due(state, now, channel, send_time)):
                     messages.append(f"{label}已采集；未到发送时间或今日已发。")
                     continue
                 try:

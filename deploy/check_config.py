@@ -85,6 +85,7 @@ def valid_environment(env):
     credentials = (bool(env.get("SMTP_USERNAME") and env.get("SMTP_PASSWORD")) if channel == "email"
                    else bool(env.get("FEISHU_WEBHOOK")) if channel == "feishu" else False)
     return (env.get("DAILY_STATE_PATH") == str(STATE_PATH)
+            and env.get("SEND_TIME") == "18:00"
             and env.get("WEB_OUTPUT_DIR") == str(SITE_PATH)
             and valid_entry_url(env.get("WEB_BASE_URL")) and credentials
             and valid_filesystem())
@@ -92,5 +93,5 @@ def valid_environment(env):
 
 if __name__ == "__main__":
     if not valid_environment(os.environ):
-        print("Production precheck failed: check root entry URL, selected credentials, existing valid state (0600), and nginx-readable site/index and parent permissions. No bootstrap performed.")
+        print("Production precheck failed: require SEND_TIME=18:00, root entry URL, selected credentials, existing valid state (0600), and nginx-readable site/index and parent permissions. No bootstrap performed.")
         sys.exit(1)

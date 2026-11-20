@@ -93,19 +93,19 @@ if ! sudo test -e /etc/auto-tech-daily.env; then
   sudo install -o root -g root -m 0600 /home/ubuntu/auto-tech-daily/deploy/auto-tech-daily.env.example /etc/auto-tech-daily.env
 fi
 sudo systemctl daemon-reload
-systemd-analyze calendar '*-*-* 12:30:00 Asia/Shanghai'
+systemd-analyze calendar '*-*-* 18:00:00 Asia/Shanghai'
 systemd-analyze calendar '*-*-* 00/2:17:00 Asia/Shanghai'
 ```
 
-这一步不执行 `enable` 或 `start`。环境文件留空的 `WEB_BASE_URL` 会使生产检查失败，避免误用旧完整日报模式。系统级 manager 以 root 读取0600文件后注入 `User=ubuntu` 进程；不要因此把环境文件改成全员可读，不要用 `source` 后打印环境。
+这一步不执行 `enable` 或 `start`。已有环境文件不会被示例覆盖。用户已保存旧版环境文件时，执行 `sudoedit /etc/auto-tech-daily.env`，新增一行 `SEND_TIME=18:00`；若已有SEND_TIME则直接修改，保证只有一行，不需重填其他秘密。生产预检查要求明确的18:00，遗漏或仍为12:30都会失败，不会退回午间发送。环境文件留空的 `WEB_BASE_URL` 也会使检查失败。系统级manager以root读取0600文件后注入 `User=ubuntu` 进程；不要改成全员可读，不要用 `source` 后打印环境。
 
 生产预检查还要求：已有普通非软链接state文件，0600、ubuntu可读写、所在目录可写，内容可迁移且schema有效；没有state就拒绝启动，不自动初始化。site必须是非软链接目录、具备others读取和穿越权限（0755），每一级父目录具备others穿越权限；预生成的index.html必须是普通非软链接文件且nginx可读（0644）。不要将state改成0644来解决网站权限。
 
-系统 timer 每两小时17分采集，12:30主执行，12:37与12:47补偿；时区显式指定上海。`Persistent=true` 在开机后补一次错过的执行，不逐次重放；`AccuracySec=1s` 不是网络发送准点保证。每个渠道每日成功一次逻辑仍有效。
+系统timer每两小时17分采集，18:00主执行，18:07与18:17补偿；18:17与每两小时项重叠无需重复发送。时区显式指定上海，程序 `SEND_TIME=18:00` 阻止午间采集发送。`Persistent=true` 在开机后补一次错过的执行，不逐次重放；`AccuracySec=1s` 不是网络发送准点保证。各渠道每日成功一次去重仍有效。
 
-## 4. 迁移状态与防止双端投递
+## 4. 首次状态快照与双端并行
 
-正式迁移时先在 GitHub Actions 停用 **Auto tech daily** 工作流的自动执行，并确认已有运行全部结束；不要同时在 GitHub 手动 send。服务器 timer/service 也保持停止。然后获取该时刻最新 main 状态到一个新的临时克隆，不能使用早先下载的陈旧状态：
+GitHub工作流保持active，服务器与GitHub按用户选择并行运行，各自状态去重、不共享状态，可能各发一份消息。服务器timer/service首次初始化时保持未启动，从最新main取得一个初始快照；不是双端持续同步，也不要求停用GitHub。快照之后GitHub的新状态不会进入服务器，服务器状态也不写回GitHub。下面仅首次无生产状态时安装；已存在就保留，不能为今天重发清除日期或重置状态。
 
 ```bash
 (
@@ -119,12 +119,12 @@ systemd-analyze calendar '*-*-* 00/2:17:00 Asia/Shanghai'
     exit 1
   fi
   sudo install -o ubuntu -g ubuntu -m 0600 "$migration/repo/data/state.json" /var/lib/auto-tech-daily/state.json
-  printf '迁移来源：'
+  printf '初始快照来源：'
   git -C "$migration/repo" log -1 --format=%H
 )
 ```
 
-`DAILY_STATE_PATH` 直接指向 `/var/lib/auto-tech-daily/state.json`，不使用软链接：程序原子 replace 会替换软链接本身。以后更新代码不更新此持久文件，不 `git reset --hard` 或 `git clean` 清理生产目录。更新前停timer、等待service结束并备份生产状态，审查代码差异后再更新；不能把 `git pull` 当作状态迁移。服务器状态不自动提交 GitHub。
+`DAILY_STATE_PATH` 直接指向 `/var/lib/auto-tech-daily/state.json`，不使用软链接：程序原子replace会替换软链接本身。以后更新代码不更新此持久文件，不 `git reset --hard` 或 `git clean` 清理生产目录。更新前停服务器timer、等待service结束并备份生产状态，审查代码差异后再更新；不能把 `git pull` 当作状态迁移。服务器状态不提交GitHub，也不被后续GitHub状态覆盖。如果初始快照已标记当天所选渠道成功，服务器当天会跳过发送，下一天正常执行，不人为清空日期。
 
 ## 5. nginx 仅发布静态页面
 
@@ -171,7 +171,7 @@ curl --fail --silent --show-error --output /dev/null http://127.0.0.1/index.html
 - 所选渠道缺少凭据时，核心程序在采集前直接失败，不改状态或网页。原子发布失败则不发提醒、保留采集状态并返回非零；全部源采集失败时保留旧网页字节与更新时间，不发布新页。选中渠道发送失败保留pending；成功后按日期去重。未选择渠道已有pending不被抹掉，skipped不补播；切换渠道可能发送那个渠道先前留下的pending。
 - 提醒只计入本次实际网页展示的待发文章；非法或超长链接被网页过滤时，不计数、不标sent，保留pending并记录过滤数量。网页展示整个保留期内的文章，包括sent/skipped；飞书网页提醒一条覆盖符合条件的全队列，不套用旧版12篇上限，仍限制20KiB。
 
-确认GitHub已停、最终状态已迁移、网页能用、环境文件路径及权限正确后，按下面顺序启动一次service、检查结果，再启用timer。启动正常模式若已经过12:30且存在pending，**会真实发送提醒**；尚未完成前述步骤就不要跳到这里。不要用手动 `--force-send` 验证迁移，不要重新启用GitHub和服务器双端采集。
+确认初始状态已准备（已有则保留）、网页能用、环境文件路径及权限正确且 `SEND_TIME=18:00` 后，按下面顺序启动一次service、检查结果，再启用timer。启动正常模式若已过北京时间18:00且当天尚未成功发送并有pending，**会真实发送提醒**；18:00前仅采集更新网页。不要用 `--force-send` 绕过快照日期验证安装。GitHub保持运行，两端消息可能重复，这是独立状态并行模式的预期边界。
 
 ```bash
 sudo systemctl daemon-reload
