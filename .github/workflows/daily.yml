@@ -2,7 +2,8 @@ name: Auto tech daily
 on:
   schedule:
     - cron: '17 */2 * * *'
-    - cron: '47 4-6 * * *'
+    - cron: '37 4 * * *'
+    - cron: '47 5-6 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -61,6 +62,7 @@ jobs:
       - name: Collect and optionally send
         env:
           MODE: ${{ inputs.mode || 'run' }}
+          SEND_TIME: '12:37'
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
