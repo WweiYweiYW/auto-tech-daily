@@ -1213,6 +1213,44 @@
       "sent_at": {
         "email": "2026-11-20T12:15:58.858875+00:00"
       }
+    },
+    "4f4377700e34f81b368118a7525b6bbd0fa4d9ea413822fef51c4d085c72c769": {
+      "id": "4f4377700e34f81b368118a7525b6bbd0fa4d9ea413822fef51c4d085c72c769",
+      "keys": [
+        "4f4377700e34f81b368118a7525b6bbd0fa4d9ea413822fef51c4d085c72c769",
+        "9dad19821915959de917b04dc4c40597442e2928c48ba9ddd97a3144875a7629"
+      ],
+      "title": "近 400 马力的纯电小钢炮：大众发布 ID. Polo GTI Clubsport 概念车",
+      "summary": "IT之家 11 月 20 日消息，2026 年是大众 GTI 诞生 50 周年。为了庆祝这一里程碑，大众不仅推出了 ID. Polo GTI 和 ID.3 Neo GTI 两款新车，还打破了本田思域 Type R 保持的纽博格林赛道前驱车圈速纪录，进一步证明 GTI 的性能实力。周年庆祝活动还没结束，大众又带来了首款纯电 GTI Clubsport。 新车名为 ID. Polo GTI Clubsport Concept，将于本月在德国埃森车展首次亮相，最引人注目的变化是动力大幅提升。 新车与量产版 ID. Polo GTI 同样基于 MEB+ 平台打造，采用单电机前驱布局，换装了尺寸更大的 APP550 电机，与后驱的 ID.7、ID.3 Neo GTI 等车型采用相同的电机。 相比普通版 GTI 的 226 马力（166kW），Clubsport 的最大功率提高至 367 马力（270kW） ，增幅达到 63%。大众还通过电池控制系统，让动力系统能够在短时间内输出 394 马力（290kW） ，峰值扭矩也从 290N·m 跃升至 550N·m。 据IT之家了解，大众对车辆进行了大量重新设计，为此开发了全新副车架，以确保前轮能够承受更大的动力。最终，Clubsport 的 0-100km/h加速时间缩短至 4.7 秒 ，最高时速达到 240km/h。 相比量产版 ID. Polo GTI，Clubsport 则更加激进，不仅增加了发动机盖通风口和尾门顶部的大型扰流板，还采用了夸张的宽体轮拱，造型足以媲美世界拉力锦标赛赛车。 Clubsport 的外观俨然是一辆赛道利器，内饰同样充满赛车氛围。RECARO 桶形赛车座椅、五点式安全带，以及喷涂经典 Tornado 红色的后部防滚架一应俱全，仪表台和其他多处饰板也用上了 ArtVelours 超细绒面材质。",
+      "link": "https://www.ithome.com/1/030/235.htm",
+      "source": "IT之家",
+      "published": "2026-11-20T12:36:00+00:00",
+      "category": "汽车新技术",
+      "seen_at": "2026-11-20T12:53:34.182278+00:00",
+      "delivery": {
+        "email": "pending",
+        "feishu": "pending"
+      },
+      "status": "pending"
+    },
+    "cda4b50f8107cb5421cb426c94c017aa258b5ecbfa5588952ff30ce038514aba": {
+      "id": "cda4b50f8107cb5421cb426c94c017aa258b5ecbfa5588952ff30ce038514aba",
+      "keys": [
+        "cda4b50f8107cb5421cb426c94c017aa258b5ecbfa5588952ff30ce038514aba",
+        "8a11275baea7f8b8118f6e07be0000d4d0f15521503f2f95ee22f0a7f9b45ef6"
+      ],
+      "title": "零跑与欧宝正式签署合作协议：共同开发全新 C 级 SUV 车型，预计 2028 年开售",
+      "summary": "IT之家 11 月 20 日消息，零跑科技创始人、董事长兼 CEO 朱江明与欧宝 CEO Florian Huettl 正式签署合作协议，双方将共同开发一款全新的 C 级 SUV 车型 。 目前，双方项目团队已分别在中国杭州和德国吕塞尔斯海姆的联合项目中心开展相关工作，本次签约将进一步推动该项目的开发进程。 官方表示，全新欧宝 C 级 SUV 车型的开发是零跑与 Stellantis 集团合作关系的重要组成部分，也是 Stellantis 集团近期发布的 FaSTLane 2030 战略增长计划中的一项重要举措。 IT之家获悉，新车预计将于 2028 年正式开启销售，计划于西班牙萨拉戈萨工厂生产 。新车将采用零跑汽车的核心零部件，并融合欧宝标志性的设计语言、座舱人体工程学、底盘工程以及高级照明系统和座椅技术。",
+      "link": "https://www.ithome.com/1/030/234.htm",
+      "source": "IT之家",
+      "published": "2026-11-20T12:23:14+00:00",
+      "category": "底盘技术",
+      "seen_at": "2026-11-20T12:53:34.182278+00:00",
+      "delivery": {
+        "email": "pending",
+        "feishu": "pending"
+      },
+      "status": "pending"
     }
   },
   "last_sent_dates": {
