@@ -2544,6 +2544,25 @@
         "feishu": "pending"
       },
       "status": "pending"
+    },
+    "85fd6075ec7a415939dfcdd30b6b244991e26fb2b3b2beeaaf8c8cd4f083055d": {
+      "id": "85fd6075ec7a415939dfcdd30b6b244991e26fb2b3b2beeaaf8c8cd4f083055d",
+      "keys": [
+        "85fd6075ec7a415939dfcdd30b6b244991e26fb2b3b2beeaaf8c8cd4f083055d",
+        "6b142c8bd68cf628ca6032e6c6599b1525065b56f56984441511257bc7638d47"
+      ],
+      "title": "Mozilla、Shopify 等企业要求欧盟委员会施压苹果，彻底开放 iOS 系统第三方浏览器引擎",
+      "summary": "IT之家 11 月 24 日消息，据科技媒体 Appleinsider 昨天报道，Mozilla、Shopify 等多家企业和民间组织向欧盟委员会发出联名信，称苹果虽然已经略微放宽 iOS 系统浏览器内核限制，但其对 WebKit 的要求仍然让开发者几乎无法在 App Store 之外销售订阅服务。 IT之家从原报道获悉，这些企业和民间组织敦促欧盟委员会对 iPhone 浏览器竞争问题启动调查。他们认为，苹果如今的限制仍阻碍浏览器厂商从 WebKit 转向其他内核 。 苹果此前要求所有第三方互联网浏览器在 iOS 系统使用 WebKit 内核。后来欧盟《数字市场法》要求苹果允许竞争对手使用第三方浏览器引擎，并为其提供必要的软件和硬件访问权限。 从 iOS 17.5 开始，苹果允许欧盟地区的浏览器使用其他引擎。但该联名信认为，苹果的技术和法律要求让更换浏览器引擎难以操作。截至目前，没有任何一家厂商能够完成切换。 该联名信认为，苹果对浏览器的限制使企业更加依赖 App Store 来触达 iPhone 用户。相比之下，Web 应用能够让内容出版商更好地掌控订阅定价、收费方式，以及与读者之间的关系。",
+      "link": "https://www.ithome.com/1/031/265.htm",
+      "source": "IT之家",
+      "published": "2026-11-24T00:32:03+00:00",
+      "category": "底盘技术",
+      "seen_at": "2026-11-24T02:57:01.935191+00:00",
+      "delivery": {
+        "email": "pending",
+        "feishu": "pending"
+      },
+      "status": "pending"
     }
   },
   "last_sent_dates": {
